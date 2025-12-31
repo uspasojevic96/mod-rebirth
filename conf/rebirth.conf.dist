@@ -1,0 +1,4 @@
+[worldserver]
+
+Rebirth.ExperienceMultiplier = 0.25
+Rebirth.StatsPerLevelPerRebirth = 1
