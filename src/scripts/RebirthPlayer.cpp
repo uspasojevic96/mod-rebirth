@@ -19,6 +19,10 @@ void RebirthPlayer::OnPlayerGiveXP(Player *player, uint32 &amount, Unit *victim,
 void RebirthPlayer::OnPlayerLevelChanged(Player *player, uint8 oldLevel) {
   rebirthManager->ClearStats(player, oldLevel);
   rebirthManager->ApplyStats(player);
+
+  if (player->GetLevel() == 80) {
+    rebirthManager->SendMessage(player, "REBIRTH\tAVAILABLE:0");
+  }
 }
 
 void RebirthPlayer::OnPlayerLogin(Player *player) {

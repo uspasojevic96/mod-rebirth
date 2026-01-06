@@ -1,6 +1,8 @@
 #include "RebirthAddon.h"
 #include "Chat.h"
+#include "Opcodes.h"
 #include "RebirthCache.h"
+#include "RebirthManager.h"
 #include "SharedDefines.h"
 
 RebirthAddon::RebirthAddon()
@@ -14,42 +16,56 @@ bool RebirthAddon::OnPlayerCanUseChat(Player *player, uint32 type,
 
   size_t delimiter = msg.find('\t');
   if (delimiter == std::string::npos)
-    return false;
+    return true;
 
   std::string prefix = msg.substr(0, delimiter);
   std::string data = msg.substr(delimiter + 1);
+  std::string response;
 
   if (prefix != "REBIRTH")
-    return false;
-
-  if (data != "GET_LEVEL")
-    return false;
+    return true;
 
   auto *cache = player->CustomData.Get<RebirthCache>(RebirthCache::CACHE_NAME);
+
   if (!cache)
-    return false;
+    return true;
 
-  uint32 rebirthLevel = cache->RebirthLevel();
+  if (data == "GET_LEVEL") {
+    uint32 rebirthLevel = cache->RebirthLevel();
+    response = "REBIRTH\tLEVEL:" + std::to_string(rebirthLevel);
+  }
 
-  // MUST be prefix + \t + payload
-  std::string response = "REBIRTH\tLEVEL:" + std::to_string(rebirthLevel);
+  if (data == "GET_EXP") {
+    response = "REBIRTH\tEXP:" +
+               std::to_string(rebirthManager->GetExperienceMultiplier(player));
+  }
 
-  WorldPacket packet;
+  if (data == "GET_STATS") {
+    uint32 rebirthLevel = cache->RebirthLevel();
+    uint8 playerLevel = player->GetLevel();
 
-  ChatHandler::BuildChatPacket(
-      packet,
-      CHAT_MSG_ADDON,    // chatType
-      LANG_ADDON,        // language
-      ObjectGuid::Empty, // senderGUID (SERVER → CLIENT!)
-      player->GetGUID(), // receiverGUID (TARGET PLAYER)
-      response,          // "PREFIX\tPAYLOAD"
-      CHAT_TAG_NONE,
-      "", // senderName
-      "", // receiverName
-      0, false,
-      "" // channelName
-  );
+    response =
+        "REBIRTH\tSTATS:" +
+        std::to_string(rebirthManager->GetStats(rebirthLevel, playerLevel));
+  }
 
-  player->GetSession()->SendPacket(&packet);
-  return false;
+  if (data == "REBIRTH") {
+    rebirthManager->Rebirth(player);
+    response = "REBIRTH\tREBIRTHED:0";
+  }
+
+  rebirthManager->SendMessage(receiver, response);
+  // WorldPacket packet(SMSG_MESSAGECHAT, 100);
+  //
+  // packet << uint8(type);
+  // packet << uint32(language);
+  // packet << ObjectGuid::Empty;
+  // packet << uint32(0);
+  // packet << receiver->GetGUID();
+  // packet << uint32(response.size() + 1);
+  // packet << response;
+  // packet << uint8(0);
+  //
+  // player->GetSession()->SendPacket(&packet);
+  return true;
 }

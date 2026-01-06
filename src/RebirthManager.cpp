@@ -1,5 +1,6 @@
 #include "RebirthManager.h"
 #include "DatabaseEnv.h"
+#include "SharedDefines.h"
 
 RebirthManager *RebirthManager::_instance = nullptr;
 
@@ -93,6 +94,7 @@ void RebirthManager::Rebirth(Player *player) {
   player->SetLevel(1);
   ApplyStats(player);
   player->SendSystemMessage("You have rebirthed");
+  SendMessage(player, "REBIRTH\tREBIRTHED:0");
 }
 
 void RebirthManager::Save(Player *player) {
@@ -102,4 +104,19 @@ void RebirthManager::Save(Player *player) {
       "INSERT INTO rebirth_character (guid, level) VALUES ({}, {}) AS new ON "
       "DUPLICATE KEY UPDATE level = new.level",
       player->GetGUID().GetCounter(), cache->RebirthLevel());
+}
+
+void RebirthManager::SendMessage(Player *player, std::string message) {
+  WorldPacket packet(SMSG_MESSAGECHAT, 100);
+
+  packet << uint8(CHAT_MSG_WHISPER);
+  packet << uint32(LANG_ADDON);
+  packet << ObjectGuid::Empty;
+  packet << uint32(0);
+  packet << player->GetGUID();
+  packet << uint32(message.size() + 1);
+  packet << message;
+  packet << uint8(0);
+
+  player->GetSession()->SendPacket(&packet);
 }

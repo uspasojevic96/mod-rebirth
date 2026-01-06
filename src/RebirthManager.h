@@ -11,7 +11,6 @@ private:
   static RebirthManager *_instance;
 
   RebirthCache *GetCache(Player *player);
-  uint32 GetStats(uint32 rebirthLevel, uint8 playerLevel);
   void UpdateStats(Player *player, uint32 value, bool increment);
 
 public:
@@ -20,7 +19,9 @@ public:
   void ApplyStats(Player *player);
   void ClearStats(Player *player, uint8 level = 0);
   float GetExperienceMultiplier(Player *player);
+  uint32 GetStats(uint32 rebirthLevel, uint8 playerLevel);
   void Load(Player *player);
   void Rebirth(Player *player);
   void Save(Player *player);
+  void SendMessage(Player *player, std::string message);
 };
